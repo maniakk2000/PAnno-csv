@@ -49,6 +49,9 @@ panno -s sample_id -i germline_vcf -p population -o outdir
                                 SAS (Central/South Asian), SSA (Sub-Saharan African).
 
 -o, --outdir TEXT               Create report in the specified output path.
+
+-r, --report TEXT [csv|html]    Create report in html or csv format.
+
 ```
 
 ### Input data
