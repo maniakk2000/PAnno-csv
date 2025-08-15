@@ -3,7 +3,7 @@
 
 """Console script for panno."""
 
-from panno import genotype_resolution, clinical_annotation, pgx_report, predict_diplotype
+from panno import genotype_resolution, clinical_annotation, pgx_report, pgx_tables_report, predict_diplotype
 import getopt, sys, os, re, pyranges
 import pandas as pd
 
@@ -11,10 +11,10 @@ def main():
   
   version = 'v0.3.1'
   help = '''
-  Usage: panno -s sample_id -i germline_vcf -p population -o outdir
+  Usage: panno -s sample_id -i germline_vcf -p population -o outdir -r report_format
   
   PAnno takes the variant calling format (VCF) file and population information as input
-  and outputs an HTML report of drug responses with prescription recommendations.
+  and outputs an HTML or csv report of drug responses with prescription recommendations.
   
   Options:
     
@@ -30,6 +30,8 @@ def main():
                                     SAS (Central/South Asian), SSA (Sub-Saharan African).
     
     -o, --outdir TEXT               Create report in the specified output path.
+
+    -r, --report TEXT [csv|html]    Create report in html or csv format.
     
     -v, --version                   Show the version and exit.
     
@@ -37,7 +39,7 @@ def main():
   '''
   
   try:
-    opts, args = getopt.getopt(sys.argv[1:], "hvs:i:p:o:", ["help", "version", "sample_id=", "germline_vcf=", "population=", "outdir="])
+    opts, args = getopt.getopt(sys.argv[1:], "hvs:i:p:o:r:", ["help", "version", "sample_id=", "germline_vcf=", "population=", "outdir=", "report="])
     if not opts:
       print(help)
       sys.exit()
@@ -59,6 +61,10 @@ def main():
       population = arg
     elif opt in ("-o", "--output"):
       outdir = arg
+    elif opt in ("-r", "--report"):
+      report_type = arg
+      if report_type not in ["html", "csv"]:
+        print(f"Incorrect report format: {report_type}")
   
   ## Check input arguments
   if 'sample_id' not in locals().keys():
@@ -103,12 +109,14 @@ def main():
   summary, prescribing_info, multi_var, single_var, phenotype_predict, clinical_anno = clinical_annotation.annotation(dic_diplotype, dic_rs2gt, hla_subtypes)
   print('Generating PAnno report ...')
   race = "%s (%s)" % (pop_dic[population], population)
-  pgx_report.report(race, summary, prescribing_info, multi_var, single_var, phenotype_predict, clinical_anno, fp, sample_id)
-  
-  # Finish the task
-  print('\nYour PAnno report has been completed and is located at %s.' % fp)
-  print('\n     ^ _ ^\n\n')
-
+  if report_type == 'html':
+    pgx_report.report(race, summary, prescribing_info, multi_var, single_var, phenotype_predict, clinical_anno, fp, sample_id)
+    print('\nYour PAnno report has been completed and is located at %s.' % fp)
+    print('\n     ^ _ ^\n\n')
+  elif report_type == 'csv':
+    pgx_tables_report.csv_report(race, summary, prescribing_info, multi_var, single_var, phenotype_predict, clinical_anno, fp, sample_id)
+    print(f'\nCSV отчеты успешно сохранены в директорию: {outdir}/{sample_id}\n')
+    print('\n     ^ _ ^\n\n')
 
 if __name__ == "__main__":
   main()
